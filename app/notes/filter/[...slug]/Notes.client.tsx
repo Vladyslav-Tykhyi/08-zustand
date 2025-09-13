@@ -4,13 +4,12 @@ import { useState, useEffect } from "react";
 import { useDebounce } from "use-debounce";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { Toaster } from "react-hot-toast";
+import Link from "next/link";
 import { fetchNotes } from "@/lib/api";
 import NoteList from "@/components/NoteList/NoteList";
 import SearchBox from "@/components/SearchBox/SearchBox";
 import Pagination from "@/components/Pagination/Pagination";
-import Modal from "@/components/Modal/Modal";
-import NoteForm from "@/components/NoteForm/NoteForm";
-import styles from "./page.module.css";
+import styles from "@/app/notes/filter/[...slug]/page.module.css";
 
 interface NotesClientProps {
   initialPage: number;
@@ -26,7 +25,6 @@ export default function NotesClient({
   const [page, setPage] = useState(initialPage);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const [debouncedSearchQuery] = useDebounce(searchQuery, 500);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { data, isLoading, isError, isSuccess, error } = useQuery({
     queryKey: ["notes", page, debouncedSearchQuery, tagFilter],
@@ -50,16 +48,6 @@ export default function NotesClient({
   useEffect(() => {
     setPage(1);
   }, [searchQuery]);
-
-  const handleOpenModal = () => {
-    console.log("Opening modal");
-    setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    console.log("Closing modal");
-    setIsModalOpen(false);
-  };
 
   if (isLoading) {
     return <div className={styles.loading}>Loading...</div>;
@@ -94,13 +82,13 @@ export default function NotesClient({
             onPageChange={(selectedPage) => setPage(selectedPage)}
           />
         )}
-        <button
+        <Link
+          href="/notes/action/create"
           className={styles.button}
-          onClick={handleOpenModal}
           data-testid="create-note-button"
         >
           Create note +
-        </button>
+        </Link>
       </header>
 
       <main>
@@ -110,12 +98,6 @@ export default function NotesClient({
           <div className={styles.empty}>No notes found</div>
         )}
       </main>
-
-      {isModalOpen && (
-        <Modal>
-          <NoteForm onCancel={handleCloseModal} />
-        </Modal>
-      )}
     </div>
   );
 }

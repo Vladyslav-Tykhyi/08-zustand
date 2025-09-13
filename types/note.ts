@@ -1,8 +1,16 @@
+export enum NoteTag {
+  Todo = "Todo",
+  Work = "Work",
+  Personal = "Personal",
+  Meeting = "Meeting",
+  Shopping = "Shopping",
+}
+
 export interface Note {
   id: string;
   title: string;
   content: string;
-  tag: "Todo" | "Work" | "Personal" | "Meeting" | "Shopping";
+  tag: NoteTag;
   createdAt: string;
   updatedAt: string;
 }
@@ -10,5 +18,5 @@ export interface Note {
 export interface NewNote {
   title: string;
   content: string;
-  tag: "Todo" | "Work" | "Personal" | "Meeting" | "Shopping";
+  tag: NoteTag;
 }

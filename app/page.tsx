@@ -1,4 +1,26 @@
 import css from "@/app/page.module.css";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Welcome to NoteHub - Your Note Taking App",
+  description:
+    "NoteHub is a simple and efficient application designed for managing personal notes. Keep your thoughts organized and accessible in one place.",
+  openGraph: {
+    title: "Welcome to NoteHub - Your Note Taking App",
+    description:
+      "NoteHub is a simple and efficient application designed for managing personal notes. Keep your thoughts organized and accessible in one place.",
+    url: "https://notehub.com",
+    images: [
+      {
+        url: "https://ac.goit.global/fullstack/react/notehub-og-meta.jpg",
+        width: 1200,
+        height: 630,
+        alt: "NoteHub Application",
+      },
+    ],
+    type: "website",
+  },
+};
 
 export default function Home() {
   return (

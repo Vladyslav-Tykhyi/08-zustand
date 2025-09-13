@@ -21,6 +21,15 @@ export default function SidebarNotes() {
             </Link>
           </li>
         ))}
+
+        <li className={styles.menuItem}>
+          <Link
+            href="/notes/action/create"
+            className={`${styles.menuLink} ${styles.createLink}`}
+          >
+            Create note +
+          </Link>
+        </li>
       </ul>
     </div>
   );

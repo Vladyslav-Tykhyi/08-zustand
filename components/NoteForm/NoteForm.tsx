@@ -1,35 +1,28 @@
-import { Formik, Form, Field, ErrorMessage } from "formik";
-import * as Yup from "yup";
+"use client";
+
+import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createNote } from "@/lib/api";
-import styles from "./NoteForm.module.css";
-import { NewNote } from "@/types/note";
 import { toast } from "react-hot-toast";
+import styles from "./NoteForm.module.css";
+import { NewNote, NoteTag } from "../../types/note";
+import { useNoteDraftStore } from "@/lib/store/noteStore";
+// import { useEffect } from 'react';
 
-interface NoteFormProps {
-  onCancel: () => void;
-}
-
-const validationSchema = Yup.object({
-  title: Yup.string()
-    .min(3, "Title must be at least 3 characters")
-    .max(50, "Title must be at most 50 characters")
-    .required("Title is required"),
-  content: Yup.string().max(500, "Content must be at most 500 characters"),
-  tag: Yup.string()
-    .oneOf(["Todo", "Work", "Personal", "Meeting", "Shopping"], "Invalid tag")
-    .required("Tag is required"),
-});
-
-export default function NoteForm({ onCancel }: NoteFormProps) {
+export default function NoteForm() {
+  const router = useRouter();
   const queryClient = useQueryClient();
+
+  // Отримуємо стан чернетки та функції для роботи з нею
+  const { draft, setDraft, clearDraft } = useNoteDraftStore();
 
   const mutation = useMutation({
     mutationFn: createNote,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notes"] });
       toast.success("Note created successfully!");
-      onCancel();
+      clearDraft(); // Очищаємо чернетку після успішного створення
+      router.push("/notes/filter/All");
     },
     onError: (error) => {
       toast.error("Failed to create note");
@@ -37,89 +30,90 @@ export default function NoteForm({ onCancel }: NoteFormProps) {
     },
   });
 
-  const initialValues: NewNote = {
-    title: "",
-    content: "",
-    tag: "Todo",
+  // Обробник зміни полів форми
+  const handleChange = (field: keyof typeof draft, value: string) => {
+    setDraft({ [field]: value });
+  };
+
+  const handleSubmit = (formData: FormData) => {
+    const values: NewNote = {
+      title: formData.get("title") as string,
+      content: formData.get("content") as string,
+      tag: formData.get("tag") as NoteTag,
+    };
+
+    mutation.mutate(values);
+  };
+
+  const handleCancel = () => {
+    // Чернетка НЕ очищається при скасуванні
+    router.push("/notes/filter/All");
   };
 
   return (
-    <Formik
-      initialValues={initialValues}
-      validationSchema={validationSchema}
-      onSubmit={(values, { resetForm }) => {
-        mutation.mutate(values);
-        resetForm();
-      }}
-    >
-      {({ isSubmitting }) => (
-        <Form className={styles.form}>
-          {/* Залишаємо всі поля форми без змін */}
-          <div className={styles.formGroup}>
-            <label htmlFor="title">Title</label>
-            <Field
-              id="title"
-              type="text"
-              name="title"
-              className={styles.input}
-            />
-            <ErrorMessage
-              name="title"
-              component="span"
-              className={styles.error}
-            />
-          </div>
+    <form action={handleSubmit} className={styles.form}>
+      <div className={styles.formGroup}>
+        <label htmlFor="title">Title</label>
+        <input
+          id="title"
+          type="text"
+          name="title"
+          className={styles.input}
+          required
+          minLength={3}
+          maxLength={50}
+          value={draft.title}
+          onChange={(e) => handleChange("title", e.target.value)}
+        />
+      </div>
 
-          <div className={styles.formGroup}>
-            <label htmlFor="content">Content</label>
-            <Field
-              as="textarea"
-              id="content"
-              name="content"
-              rows={8}
-              className={styles.textarea}
-            />
-            <ErrorMessage
-              name="content"
-              component="span"
-              className={styles.error}
-            />
-          </div>
+      <div className={styles.formGroup}>
+        <label htmlFor="content">Content</label>
+        <textarea
+          id="content"
+          name="content"
+          rows={8}
+          className={styles.textarea}
+          maxLength={500}
+          value={draft.content}
+          onChange={(e) => handleChange("content", e.target.value)}
+        />
+      </div>
 
-          <div className={styles.formGroup}>
-            <label htmlFor="tag">Tag</label>
-            <Field as="select" id="tag" name="tag" className={styles.select}>
-              <option value="Todo">Todo</option>
-              <option value="Work">Work</option>
-              <option value="Personal">Personal</option>
-              <option value="Meeting">Meeting</option>
-              <option value="Shopping">Shopping</option>
-            </Field>
-            <ErrorMessage
-              name="tag"
-              component="span"
-              className={styles.error}
-            />
-          </div>
+      <div className={styles.formGroup}>
+        <label htmlFor="tag">Tag</label>
+        <select
+          id="tag"
+          name="tag"
+          className={styles.select}
+          required
+          value={draft.tag}
+          onChange={(e) => handleChange("tag", e.target.value as NoteTag)}
+        >
+          <option value={NoteTag.Todo}>Todo</option>
+          <option value={NoteTag.Work}>Work</option>
+          <option value={NoteTag.Personal}>Personal</option>
+          <option value={NoteTag.Meeting}>Meeting</option>
+          <option value={NoteTag.Shopping}>Shopping</option>
+        </select>
+      </div>
 
-          <div className={styles.actions}>
-            <button
-              type="button"
-              className={styles.cancelButton}
-              onClick={onCancel}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className={styles.submitButton}
-              disabled={isSubmitting || mutation.isPending}
-            >
-              {mutation.isPending ? "Creating..." : "Create note"}
-            </button>
-          </div>
-        </Form>
-      )}
-    </Formik>
+      <div className={styles.actions}>
+        <button
+          type="button"
+          className={styles.cancelButton}
+          onClick={handleCancel}
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          className={styles.submitButton}
+          disabled={mutation.isPending}
+        >
+          {mutation.isPending ? "Creating..." : "Create note"}
+        </button>
+      </div>
+    </form>
   );
 }
